@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer · Live Wallpaper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Video background */
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1;
+            object-fit: cover;
+        }
+
+        /* Overlay to make text readable */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tomato-icon {
+            font-size: 2rem;
+        }
+
+        .timer-display {
+            font-size: 5rem;
+            font-weight: 700;
+            text-align: center;
+            color: #f5576c;
+            margin-bottom: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            background: #f5576c;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+            min-width: 100px;
+        }
+
+        button:hover {
+            background: #f093fb;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .settings {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .settings h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .time-inputs {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-group label {
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 80px;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #f5576c;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .task-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1.5rem;
+            border-radius: 1rem;
+        }
+
+        .task-section h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .task-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-input input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #f5576c;
+            border-radius: 10px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .task-input button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            min-width: auto;
+        }
+
+        .task-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 0.8rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .task-item span {
+            flex: 1;
+            margin-left: 0.5rem;
+            word-break: break-word;
+        }
+
+        .task-item.completed span {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .task-actions i {
+            cursor: pointer;
+            margin-left: 0.5rem;
+            color: #f5576c;
+            font-size: 1.2rem;
+        }
+
+        .task-actions i:hover {
+            color: #f093fb;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #777;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Live wallpaper video (your direct link) -->
+    <video id="bg-video" autoplay muted loop playsinline>
+        <source src="https://videos.pexels.com/video-files/3266556/3266556-uhd_3840_2160_30fps.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h1>
+            <span class="tomato-icon">🍅</span> Pomodoro Timer
+        </h1>
+
+        <div class="timer-display" id="timer">25:00</div>
+        <div class="status" id="status">Work</div>
+
+        <div class="button-group">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+
+        <div class="settings">
+            <h3>⏱️ Customize Time (minutes)</h3>
+            <div class="time-inputs">
+                <div class="input-group">
+                    <label for="workTime">Work</label>
+                    <input type="number" id="workTime" min="1" max="60" value="25">
+                </div>
+                <div class="input-group">
+                    <label for="breakTime">Break</label>
+                    <input type="number" id="breakTime" min="1" max="30" value="5">
+                </div>
+            </div>
+        </div>
+
+        <div class="task-section">
+            <h3>📋 Task List</h3>
+            <div class="task-input">
+                <input type="text" id="taskInput" placeholder="What are you working on?">
+                <button id="addTaskBtn">Add</button>
+            </div>
+            <ul class="task-list" id="taskList"></ul>
+        </div>
+
+        <footer>
+            🍅 Stay focused, one pomodoro at a time.
+        </footer>
+    </div>
+
+    <script>
+        // Audio notification (using Web Audio API as fallback if file not available)
+        function playSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.5;
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } catch (e) {
+                console.log("Audio not supported");
+            }
+        }
+
+        // Timer variables
+        let workMinutes = 25;
+        let breakMinutes = 5;
+        let currentSeconds = workMinutes * 60;
+        let timerInterval = null;
+        let isWork = true;
+        let isRunning = false;
+
+        // DOM elements
+        const timerDisplay = document.getElementById('timer');
+        const statusDisplay = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const workInput = document.getElementById('workTime');
+        const breakInput = document.getElementById('breakTime');
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
+
+        // Update timer display
+        function updateTimerDisplay() {
+            const mins = Math.floor(currentSeconds / 60);
+            const secs = currentSeconds % 60;
+            timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Switch between work and break
+        function switchMode() {
+            isWork = !isWork;
+            if (isWork) {
+                currentSeconds = workMinutes * 60;
+                statusDisplay.textContent = 'Work';
+            } else {
+                currentSeconds = breakMinutes * 60;
+                statusDisplay.textContent = 'Break';
+            }
+            updateTimerDisplay();
+            playSound(); // notify user
+        }
+
+        // Timer tick
+        function tick() {
+            if (currentSeconds > 0) {
+                currentSeconds--;
+                updateTimerDisplay();
+            } else {
+                // Time's up
+                switchMode();
+            }
+        }
+
+        // Start timer
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            workInput.disabled = true;
+            breakInput.disabled = true;
+            timerInterval = setInterval(tick, 1000);
+        }
+
+        // Pause timer
+        function pauseTimer() {
+            if (!isRunning) return;
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            workInput.disabled = false;
+            breakInput.disabled = false;
+            clearInterval(timerInterval);
+        }
+
+        // Reset timer
+        function resetTimer() {
+            pauseTimer();
+            // Reset to work mode
+            isWork = true;
+            statusDisplay.textContent = 'Work';
+            workMinutes = parseInt(workInput.value) || 25;
+            breakMinutes = parseInt(breakInput.value) || 5;
+            currentSeconds = workMinutes * 60;
+            updateTimerDisplay();
+        }
+
+        // Event listeners for buttons
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Update times when input changes (only if timer not running)
+        workInput.addEventListener('change', function() {
+            if (!isRunning) {
+                workMinutes = parseInt(workInput.value) || 25;
+                if (isWork) {
+                    currentSeconds = workMinutes * 60;
+                    updateTimerDisplay();
+                }
+            }
+        });
+
+        breakInput.addEventListener('change', function() {
+            if (!isRunning) {
+                breakMinutes = parseInt(breakInput.value) || 5;
+                if (!isWork) {
+                    currentSeconds = breakMinutes * 60;
+                    updateTimerDisplay();
+                }
+            }
+        });
+
+        // Task list functionality
+        let tasks = JSON.parse(localStorage.getItem('pomodoro_tasks')) || [];
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${index})">
+                    <span>${task.text}</span>
+                    <div class="task-actions">
+                        <i class="fas fa-trash" onclick="deleteTask(${index})"></i>
+                    </div>
+                `;
+                taskList.appendChild(li);
+            });
+            localStorage.setItem('pomodoro_tasks', JSON.stringify(tasks));
+        }
+
+        window.toggleTask = function(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTasks();
+        };
+
+        window.deleteTask = function(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        };
+
+        addTaskBtn.addEventListener('click', function() {
+            const text = taskInput.value.trim();
+            if (text) {
+                tasks.push({ text, completed: false });
+                taskInput.value = '';
+                renderTasks();
+            }
+        });
+
+        taskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTaskBtn.click();
+            }
+        });
+
+        // Initialize timer and tasks
+        resetTimer();
+        renderTasks();
+
+        // Add Font Awesome for icons
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css';
+        document.head.appendChild(link);
+    </script>
+</body>
+</html>
