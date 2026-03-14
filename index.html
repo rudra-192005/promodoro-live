@@ -12,17 +12,16 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Video background */
+        /* Video background - now uses contain to show full video */
         #bg-video {
             position: fixed;
             top: 0;
             left: 0;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;      /* Shows entire video, may add black bars */
+            background-color: black;  /* Fills bars with black */
             z-index: -1;
-            object-fit: cover;
         }
 
         /* Overlay to make text readable */
@@ -32,7 +31,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.3); /* Slightly lighter */
             backdrop-filter: blur(2px);
             z-index: 0;
         }
@@ -245,9 +244,10 @@
     </style>
 </head>
 <body>
-    <!-- Background video -->
+    <!-- Background video (properly closed) -->
     <video id="bg-video" autoplay muted loop playsinline>
         <source src="https://videos.pexels.com/video-files/3266556/3266556-uhd_3840_2160_30fps.mp4" type="video/mp4">
+    </video>
     <div class="overlay"></div>
 
     <div class="container">
